@@ -252,7 +252,7 @@ _zsh_highlight_add_highlight()
 # $1 is name of widget to call
 _zsh_highlight_call_widget()
 {
-  builtin zle "$@" && 
+  builtin zle "$@" &&
   _zsh_highlight
 }
 
@@ -284,6 +284,13 @@ _zsh_highlight_bind_widgets()
 
   local cur_widget
   for cur_widget in $widgets_to_bind; do
+
+    # Skip plugins that are already bound
+    # Fix for https://github.com/zsh-users/zsh-syntax-highlighting/issues/401
+    if type _zsh_highlight_widget_$cur_widget 2>&1 >/dev/null; then
+      continue;
+    fi
+
     case $widgets[$cur_widget] in
 
       # Already rebound event: do nothing.
@@ -301,7 +308,7 @@ _zsh_highlight_bind_widgets()
               zle -N $cur_widget _zsh_highlight_widget_$prefix-$cur_widget;;
 
       # Completion widget: override and rebind old one with prefix "orig-".
-      completion:*) zle -C $prefix-$cur_widget ${${(s.:.)widgets[$cur_widget]}[2,3]} 
+      completion:*) zle -C $prefix-$cur_widget ${${(s.:.)widgets[$cur_widget]}[2,3]}
                     eval "_zsh_highlight_widget_${(q)prefix}-${(q)cur_widget}() { _zsh_highlight_call_widget ${(q)prefix}-${(q)cur_widget} -- \"\$@\" }"
                     zle -N $cur_widget _zsh_highlight_widget_$prefix-$cur_widget;;
 
@@ -310,7 +317,7 @@ _zsh_highlight_bind_widgets()
                zle -N $cur_widget _zsh_highlight_widget_$prefix-$cur_widget;;
 
       # Incomplete or nonexistent widget: Bind to z-sy-h directly.
-      *) 
+      *)
          if [[ $cur_widget == zle-* ]] && [[ -z $widgets[$cur_widget] ]]; then
            _zsh_highlight_widget_${cur_widget}() { :; _zsh_highlight }
            zle -N $cur_widget _zsh_highlight_widget_$cur_widget
